@@ -6,34 +6,33 @@ CC = g++
 .PHONY: all run clean
 
 
-all: run
+all: main
 
-
-run: $(OBJECTS) main
-	@./main
 
 main: $(OBJECTS) main.cpp
-	$(CC) $(CXXFLAGS) -DUSER main.cpp -c -o main.o
-	$(CC) main.o $(OBJECTS) $(LDFLAGS) -o main
+	$(CC) $(CXXFLAGS) -DUSER main.cpp -c -o build/main.o
+	$(CC) build/main.o $(addprefix build/, $(OBJECTS)) $(LDFLAGS) -o main
+	@./main
 
 ref-openblas: $(OBJECTS) main.cpp
-	$(CC) $(CXXFLAGS) -DOPENBLAS main.cpp -c -o main.o
-	$(CC) main.o $(OBJECTS) $(LDFLAGS) -lopenblas -o main
+	$(CC) $(CXXFLAGS) -DOPENBLAS main.cpp -c -o build/main.o
+	$(CC) build/main.o $(addprefix build/, $(OBJECTS)) $(LDFLAGS) -lopenblas -o main
 	@OMP_NUM_THREADS=1 ./main
 
 ref-mkl: $(OBJECTS) main.cpp
-	$(CC) $(CXXFLAGS) -DMKL main.cpp -c -o main.o
-	$(CC) main.o $(OBJECTS) $(LDFLAGS) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -o main
+	$(CC) $(CXXFLAGS) -DMKL main.cpp -c -o build/main.o
+	$(CC) build/main.o $(addprefix build/, $(OBJECTS)) $(LDFLAGS) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -o main
 	@OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 ./main
 
 ref-baseline: $(OBJECTS) main.cpp
-	$(CC) $(CXXFLAGS) -DBASELINE main.cpp -c -o main.o
-	$(CC) main.o $(OBJECTS) $(LDFLAGS) -o main
+	$(CC) $(CXXFLAGS) -DBASELINE main.cpp -c -o build/main.o
+	$(CC) build/main.o $(addprefix build/, $(OBJECTS)) $(LDFLAGS) -o main
 	@./main
 
 %.o : src/%.cpp
-	$(CC) -c $(CXXFLAGS) -I. $<
+	mkdir -p build/
+	$(CC) -c $(CXXFLAGS) -I. $< -o build/$@
 
 clean:
-	rm -rf *.o
+	rm -rf build/
 	rm -rf main
