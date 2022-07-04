@@ -9,13 +9,6 @@ using namespace std;
 namespace lib
 {
 
-    static void _AddDot4x64(int, const float *, int, const float *, int, float *, int);
-    static void InnerKernel(int m, int n, int k, float *a, int lda,
-                            float *b, int ldb,
-                            float *c, int ldc);
-    static void PackMatrixB(int, float *, int, float *);
-    static float *packedB = nullptr;
-
     void sgemm(int m, int n, int k, float *a, int lda,
                float *b, int ldb,
                float *c, int ldc)

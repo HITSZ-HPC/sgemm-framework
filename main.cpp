@@ -61,10 +61,10 @@ void gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, i
 int main(int argc, char const *argv[])
 {
     // Init
-    float *A = (float *)_mm_malloc(sizeof(float) * M * K, 64);
-    float *B = (float *)_mm_malloc(sizeof(float) * K * N, 64);
-    float *C = (float *)_mm_malloc(sizeof(float) * M * N, 64);
-    float *C_ref = (float *)_mm_malloc(sizeof(float) * M * N, 64);
+    float *A = (float *)_mm_malloc(sizeof(float) * M * K, 4096);
+    float *B = (float *)_mm_malloc(sizeof(float) * K * N, 4096);
+    float *C = (float *)_mm_malloc(sizeof(float) * M * N, 4096);
+    float *C_ref = (float *)_mm_malloc(sizeof(float) * M * N, 4096);
     // memset(A, .1, sizeof(float) * M * K);
     // memset(B, .1, sizeof(float) * K * N);
     init_matrix(A, M * K);
