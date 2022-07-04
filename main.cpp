@@ -18,9 +18,13 @@ using Clock = std::chrono::system_clock;
 #define M 1024
 #define N 1024
 #define K 1024
-
-#define WARMUP_ROUND 2
-#define HOT_ROUND 30
+#ifdef BASELINE
+#define WARMUP_ROUND 0
+#define HOT_ROUND 1
+#else
+#define WARMUP_ROUND 10
+#define HOT_ROUND 100
+#endif
 #define CHECK_THRESHOLD 1e-5
 
 void baseline_sgemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc)
