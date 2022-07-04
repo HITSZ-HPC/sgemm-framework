@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <cstring>
 #include <x86intrin.h>
 
 #ifdef OPENBLAS
@@ -19,7 +20,23 @@ using Clock = std::chrono::system_clock;
 #define K 1024
 
 #define WARMUP_ROUND 2
-#define HOT_ROUND 10
+#define HOT_ROUND 30
+#define CHECK_THRESHOLD 1e-5
+
+void baseline_sgemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc)
+{
+    // (M, K) * (K, N) ==> (M, N)
+    for (int ii = 0; ii < m; ++ii)
+    {
+        for (int jj = 0; jj < n; ++jj)
+        {
+            for (int kk = 0; kk < k; ++kk)
+            {
+                c[ii * ldc + jj] += a[ii * lda + kk] * b[kk * ldb + jj];
+            }
+        }
+    }
+}
 
 void gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, int ldc)
 {
@@ -33,17 +50,7 @@ void gemm(int m, int n, int k, float *a, int lda, float *b, int ldb, float *c, i
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, a, lda, b, ldb, 0, c, ldc);
 #endif
 #ifdef BASELINE
-    // (M, K) * (K, N) ==> (M, N)
-    for (int ii = 0; ii < m; ++ii)
-    {
-        for (int jj = 0; jj < n; ++jj)
-        {
-            for (int kk = 0; kk < k; ++kk)
-            {
-                c[ii * ldc + jj] += a[ii * lda + kk] * b[kk * ldb + jj];
-            }
-        }
-    }
+    baseline_sgemm(m, n, k, a, lda, b, ldb, c, ldc);
 #endif
 }
 
@@ -53,6 +60,9 @@ int main(int argc, char const *argv[])
     float *A = (float *)_mm_malloc(sizeof(float) * M * K, 64);
     float *B = (float *)_mm_malloc(sizeof(float) * K * N, 64);
     float *C = (float *)_mm_malloc(sizeof(float) * M * N, 64);
+    float *C_ref = (float *)_mm_malloc(sizeof(float) * M * N, 64);
+    // memset(A, .1, sizeof(float) * M * K);
+    // memset(B, .1, sizeof(float) * K * N);
     init_matrix(A, M * K);
     init_matrix(B, K * N);
 
@@ -82,6 +92,42 @@ int main(int argc, char const *argv[])
     std::cout << "Time consumed: " << time_in_sec << " s"
               << "\n";
     std::cout << "SGEMM performance: " << GFLOPS << " GFlops" << std::endl;
+    std::cout << "Checking result...";
+
+    // Correctness check
+    memset(C, 0, sizeof(float) * M * N);
+    gemm(M, N, K, A, K, B, N, C, N);
+    baseline_sgemm(M, N, K, A,
+                   K, B, N, C_ref, N);
+    bool check_flag = true;
+    int check_i, check_j;
+    for (size_t i = 0; i < M; i++)
+    {
+        for (size_t j = 0; j < N; j++)
+        {
+            if (abs(C[i * N + j] - C_ref[i * N + j]) > CHECK_THRESHOLD * C_ref[i * N + j])
+            {
+                check_flag = false;
+                check_i = i;
+                check_j = j;
+                break;
+            }
+        }
+        if (!check_flag)
+            break;
+    }
+    if (check_flag)
+    {
+        std::cout << "passed";
+    }
+    else
+    {
+        std::cout << "wrong" << '\n';
+        std::cout << "Wrong index: " << check_i << " " << check_j << '\n';
+        std::cout << "Wrong value: " << C[check_i * N + check_j] << " ";
+        std::cout << "Correct value: " << C_ref[check_i * N + check_j] << " ";
+    }
+    std::cout << std::endl;
 
     return 0;
 }
