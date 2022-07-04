@@ -22,8 +22,8 @@ using Clock = std::chrono::system_clock;
 #define WARMUP_ROUND 0
 #define HOT_ROUND 1
 #else
-#define WARMUP_ROUND 10
-#define HOT_ROUND 100
+#define WARMUP_ROUND 0
+#define HOT_ROUND 1
 #endif
 #define CHECK_THRESHOLD 1e-5
 
